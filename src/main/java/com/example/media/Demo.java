@@ -7,25 +7,33 @@ import com.example.media.proxy.RemoteProxySource;
 import com.example.media.source.*;
 
 public class Demo {
+
     public static void main(String[] args) {
-        // Build renderers (implementors for Bridge)
+
+        // -----------------------------------------------------
+        // 1. Initialize Renderers (Bridge Implementors)
+        // -----------------------------------------------------
         Renderer hw = new HardwareRenderer();
         Renderer sw = new SoftwareRenderer();
 
-        // Build a concrete MediaPlayer (abstraction in Bridge)
+        // Create a MediaPlayer abstraction
         MediaPlayer player = new ConcreteMediaPlayer(hw);
 
-        // Build sources
+        // -----------------------------------------------------
+        // 2. Prepare Media Sources
+        // -----------------------------------------------------
         MediaSource local = new LocalFileSource("movie.mp4");
         MediaSource hls = new HlsSource("https://example.com/stream.m3u8");
         MediaSource remote = new RemoteApiSource("https://api.example.com/media/123");
-        MediaSource cachedRemote = new RemoteProxySource(remote);
+        MediaSource cachedRemote = new RemoteProxySource(remote);  // Proxy
 
-        // Legacy adapted source
+        // Legacy source adapted to the new interface (Adapter)
         LegacyMonolithicSource legacy = new LegacyMonolithicSource("old-disk:track-7");
         MediaSource adapted = new LegacySourceAdapter(legacy, "track-7");
 
-        // Build a composite playlist
+        // -----------------------------------------------------
+        // 3. Build Composite Playlist (Composite Pattern)
+        // -----------------------------------------------------
         CompositePlaylist root = new CompositePlaylist("Root Playlist");
         root.add(new MediaFile("Local Movie", local));
 
@@ -36,26 +44,31 @@ public class Demo {
 
         root.add(new MediaFile("Legacy Track (adapted)", adapted));
 
-        // 1) Play playlist using current renderer (Hardware)
-        System.out.println("\\n=== 1. Play playlist with HardwareRenderer (Bridge) ===");
+        // -----------------------------------------------------
+        // 4. Demonstration
+        // -----------------------------------------------------
+
+        // Step 1: Play playlist with Hardware Renderer (Bridge)
+        System.out.println("\n[1] Playing playlist using HardwareRenderer (Bridge)");
         root.play(player);
 
-        // 2) Apply decorators (watermark + equalizer) by wrapping the current renderer
-        System.out.println("\\n=== 2. Apply decorators: Watermark + Equalizer (Decorator) ===");
+        // Step 2: Apply Decorators (Watermark + Equalizer)
+        System.out.println("\n[2] Applying decorators: Watermark + Equalizer (Decorator)");
         Renderer withWatermark = new WatermarkDecorator(hw, "SAMPLE-WM");
         Renderer withEq = new EqualizerDecorator(withWatermark, "BassBoost");
         player.setRenderer(withEq);
         player.playSource(cachedRemote); // triggers proxy caching
 
-        // Play again to show cache hit
-        System.out.println("\\n=== 3. Play cached remote stream again (Proxy cache hit) ===");
+        // Step 3: Replay cached media (Proxy Pattern)
+        System.out.println("\n[3] Replaying cached remote stream (Proxy cache hit)");
         player.playSource(cachedRemote);
 
-        // 4) Switch renderer implementation at runtime (Bridge)
-        System.out.println("\\n=== 4. Switch to SoftwareRenderer (Bridge) ===");
+        // Step 4: Switch rendering implementation dynamically (Bridge)
+        System.out.println("\n[4] Switching to SoftwareRenderer (Bridge)");
         player.setRenderer(sw);
         player.playSource(local);
 
-        System.out.println("\\n=== Demo finished ===");
+        // Demo complete
+        System.out.println("\nDemo finished.");
     }
 }
